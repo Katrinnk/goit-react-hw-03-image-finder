@@ -36,7 +36,7 @@ class App extends Component {
 
     getImages(this.state.searchQuery, this.state.page);
     this.setState(prev => {
-      page: prev.page++;
+      prev.page++;
     });
 
     console.log('page', this.state.page);

@@ -9,46 +9,62 @@ class App extends Component {
   state = {
     images: [],
     page: 1,
-    totalPages: 0,
+    totalImages: 0,
+    isLoading: false,
+    searchQuery: '',
   };
 
   onSubmit = searchQuery => {
-    getImages(searchQuery, this.state.page)
+    if (!searchQuery.trim() || searchQuery === this.state.searchQuery) {
+      alert('Please, change your request');
+      return;
+    }
+    this.setState({ searchQuery: searchQuery, images: [], page: 1 });
+  };
+
+  componentDidUpdate(_, prevState) {
+    if (
+      prevState.searchQuery !== this.state.searchQuery ||
+      prevState.page !== this.state.page
+    ) {
+      this.fetchImages();
+    }
+  }
+
+  fetchImages = () => {
+    this.setState({
+      isLoading: true,
+    });
+    getImages(this.state.searchQuery, this.state.page)
       .then(data => {
         if (data.hits.length === 0) {
           alert('Images not found');
         }
-        this.setState({
-          images: data.hits,
-          totalPages: data.totalHits / 12,
-          searchQuery: searchQuery,
-        });
-
-        console.log('data', data);
+        this.setState(prev => ({
+          images: [...prev.images, ...data.hits],
+          totalImages: data.totalHits,
+        }));
       })
       .catch(e => {
         alert(e);
-      });
+      })
+      .finally(() => this.setState({ isLoading: false }));
   };
 
   loadMore = () => {
-    <Loader />;
-
-    getImages(this.state.searchQuery, this.state.page);
     this.setState(prev => {
-      prev.page++;
+      return { page: prev.page + 1 };
     });
-
-    console.log('page', this.state.page);
   };
 
   render() {
-    console.log('this.state', this.state);
+    const { images, totalImages, isLoading } = this.state;
     return (
       <>
         <Searchbar onSubmit={this.onSubmit} />
-        <ImageGallery images={this.state.images} />
-        {this.state.totalPages / this.state.page !== 0 && (
+        {isLoading && <Loader />}
+        <ImageGallery images={images} />
+        {totalImages !== images.length && !isLoading && (
           <Button loadMore={this.loadMore} />
         )}
       </>
